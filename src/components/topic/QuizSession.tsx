@@ -209,9 +209,9 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
                 let choiceClass = 'border-border hover:border-primary/50 hover:bg-muted/50';
                 if (showAnswer) {
                   if (isCorrect) {
-                    choiceClass = 'border-success bg-success/10 scale-[1.02]';
+                    choiceClass = 'border-[hsl(var(--correct))] bg-[hsl(var(--correct-bg))] scale-[1.02] text-[hsl(var(--correct))]';
                   } else if (isSelected && !isCorrect) {
-                    choiceClass = 'border-destructive bg-destructive/10';
+                    choiceClass = 'border-[hsl(var(--wrong))] bg-[hsl(var(--wrong-bg))] text-[hsl(var(--wrong))]';
                   }
                 } else if (isSelected) {
                   choiceClass = 'border-primary bg-primary/5';
@@ -232,10 +232,10 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
                     </span>
                     <span className="flex-1">{choice}</span>
                     {showAnswer && isCorrect && (
-                      <CheckCircle className="w-5 h-5 text-success animate-scale-in" />
+                      <CheckCircle className="w-5 h-5 text-[hsl(var(--correct))] animate-scale-in" />
                     )}
                     {showAnswer && isSelected && !isCorrect && (
-                      <XCircle className="w-5 h-5 text-destructive animate-scale-in" />
+                      <XCircle className="w-5 h-5 text-[hsl(var(--wrong))] animate-scale-in" />
                     )}
                   </button>
                 );
