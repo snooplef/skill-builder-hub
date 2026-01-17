@@ -36,14 +36,23 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
   const [bestStreak, setBestStreak] = useState(0);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [quizComplete, setQuizComplete] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const questionStartTime = useRef(Date.now());
 
   const currentQuestion = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
 
-  // Timer effect
+  // Timer effect - stops when quiz is complete
   useEffect(() => {
+    if (quizComplete) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      return;
+    }
+
     timerRef.current = setInterval(() => {
       setTimeElapsed((prev) => prev + 1);
     }, 1000);
@@ -51,7 +60,7 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [quizComplete]);
 
   // Reset timer for each question
   useEffect(() => {
@@ -119,6 +128,11 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
     const isCorrect = selectedChoice === currentQuestion.correct_choice_index;
     await logAttempt(isCorrect ? 'correct' : 'wrong');
     setShowAnswer(true);
+    
+    // If last question, mark quiz complete to stop timer
+    if (currentIndex === questions.length - 1) {
+      setQuizComplete(true);
+    }
   };
 
   const handleOpenSubmit = () => {
@@ -145,11 +159,14 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
         setShowAnswer(false);
         setIsTransitioning(false);
       }, 200);
+    } else {
+      // Last question - mark quiz as complete to stop timer
+      setQuizComplete(true);
     }
   };
 
-  // Show summary if quiz is complete
-  if (currentIndex >= questions.length - 1 && showAnswer && results.length === questions.length) {
+  // Show summary if quiz is complete (all questions answered)
+  if (quizComplete && results.length === questions.length) {
     return (
       <QuizSummary 
         results={results}
@@ -296,7 +313,13 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
             )}
 
             {showAnswer && !isOpenEnded && (
-              <Button onClick={goToNext} className="animate-fade-in">
+              <Button onClick={() => {
+                if (currentIndex < questions.length - 1) {
+                  goToNext();
+                } else {
+                  setQuizComplete(true);
+                }
+              }} className="animate-fade-in">
                 {currentIndex < questions.length - 1 ? (
                   <>
                     Next Question

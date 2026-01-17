@@ -50,10 +50,10 @@ export function QuizSummary({ results, topicId, totalTime, bestStreak, onRetry, 
     switch (result) {
       case 'correct':
       case 'self_correct':
-        return <CheckCircle className="w-4 h-4 text-[hsl(142,70%,45%)]" />;
+        return <CheckCircle className="w-4 h-4 text-[hsl(var(--correct))]" />;
       case 'wrong':
       case 'self_wrong':
-        return <XCircle className="w-4 h-4 text-destructive" />;
+        return <XCircle className="w-4 h-4 text-[hsl(var(--wrong))]" />;
       case 'dont_know':
         return <HelpCircle className="w-4 h-4 text-muted-foreground" />;
     }
