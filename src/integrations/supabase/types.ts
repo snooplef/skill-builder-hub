@@ -65,18 +65,21 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           name: string
           topic_id: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           name: string
           topic_id: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           name?: string
           topic_id?: string
@@ -144,6 +147,7 @@ export type Database = {
           back: string
           category_id: string
           created_at: string
+          created_by: string | null
           ease_factor: number | null
           front: string
           id: string
@@ -157,6 +161,7 @@ export type Database = {
           back: string
           category_id: string
           created_at?: string
+          created_by?: string | null
           ease_factor?: number | null
           front: string
           id: string
@@ -170,6 +175,7 @@ export type Database = {
           back?: string
           category_id?: string
           created_at?: string
+          created_by?: string | null
           ease_factor?: number | null
           front?: string
           id?: string
@@ -230,6 +236,7 @@ export type Database = {
           choices: Json | null
           correct_choice_index: number | null
           created_at: string
+          created_by: string | null
           difficulty: number | null
           explanation: string | null
           id: string
@@ -244,6 +251,7 @@ export type Database = {
           choices?: Json | null
           correct_choice_index?: number | null
           created_at?: string
+          created_by?: string | null
           difficulty?: number | null
           explanation?: string | null
           id: string
@@ -258,6 +266,7 @@ export type Database = {
           choices?: Json | null
           correct_choice_index?: number | null
           created_at?: string
+          created_by?: string | null
           difficulty?: number | null
           explanation?: string | null
           id?: string
