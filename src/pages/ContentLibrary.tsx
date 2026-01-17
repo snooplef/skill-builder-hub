@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Upload, FileJson, FileUp, Eye, Copy, CheckCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const exampleQuestions = {
   topic: "react",
@@ -50,6 +51,7 @@ const exampleFlashcards = {
 };
 
 export default function ContentLibrary() {
+  const { user } = useAuth();
   const [jsonInput, setJsonInput] = useState('');
   const [importing, setImporting] = useState(false);
   const [copied, setCopied] = useState<'questions' | 'flashcards' | null>(null);
@@ -78,6 +80,11 @@ export default function ContentLibrary() {
   };
 
   const validateAndImport = async (type: 'questions' | 'flashcards') => {
+    if (!user) {
+      toast.error('You must be logged in to import content');
+      return;
+    }
+
     try {
       setImporting(true);
       const data = JSON.parse(jsonInput);
@@ -90,10 +97,10 @@ export default function ContentLibrary() {
         throw new Error('Category is required');
       }
 
-      // Upsert category
+      // Upsert category with ownership
       const { data: catData, error: catError } = await supabase
         .from('categories')
-        .upsert({ topic_id: data.topic, name: data.category }, { onConflict: 'topic_id,name' })
+        .upsert({ topic_id: data.topic, name: data.category, created_by: user.id }, { onConflict: 'topic_id,name' })
         .select()
         .single();
 
@@ -113,6 +120,7 @@ export default function ContentLibrary() {
           explanation: q.explanation || null,
           difficulty: q.difficulty || null,
           tags: q.tags || null,
+          created_by: user.id,
         }));
 
         const { error } = await supabase.from('questions').upsert(questions, { onConflict: 'id' });
@@ -126,6 +134,7 @@ export default function ContentLibrary() {
           front: c.front,
           back: c.back,
           tags: c.tags || null,
+          created_by: user.id,
         }));
 
         const { error } = await supabase.from('flashcards').upsert(cards, { onConflict: 'id' });
