@@ -8,7 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { QuizTab } from '@/components/topic/QuizTab';
 import { FlashcardsTab } from '@/components/topic/FlashcardsTab';
 import { ProgressTab } from '@/components/topic/ProgressTab';
-import { Atom, FileCode, Palette, Code } from 'lucide-react';
+import { QuestionBrowserTab } from '@/components/topic/QuestionBrowserTab';
+import { Atom, FileCode, Palette, Code, BookOpen } from 'lucide-react';
 
 const topicMeta: Record<TopicId, { name: string; icon: typeof Atom; color: string }> = {
   react: { name: 'React', icon: Atom, color: 'bg-topic-react' },
@@ -123,9 +124,10 @@ export default function TopicPage() {
       </div>
 
       <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-lg grid-cols-4">
           <TabsTrigger value="quiz">Quiz</TabsTrigger>
           <TabsTrigger value="flashcards">Flashcards</TabsTrigger>
+          <TabsTrigger value="reference">Reference</TabsTrigger>
           <TabsTrigger value="progress">Progress</TabsTrigger>
         </TabsList>
 
@@ -145,6 +147,14 @@ export default function TopicPage() {
             topicId={validTopicId}
             categories={categories}
             flashcards={flashcards}
+          />
+        </TabsContent>
+
+        <TabsContent value="reference" className="mt-6">
+          <QuestionBrowserTab 
+            key={`reference-${validTopicId}-${dataKey}`}
+            categories={categories}
+            questions={questions}
           />
         </TabsContent>
 
