@@ -6,104 +6,107 @@
 
 /* 
   Frontend Interview Prep Design System
-  Clean, modern, minimal with warm accent
+  Moss green + soft pink accent palette
 */
 
 @layer base {
   :root {
     /* Neutral warm grays */
-    --background: 40 15% 98%;
-    --foreground: 20 20% 10%;
+    --background: 60 10% 97%;
+    --foreground: 150 10% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 20 20% 10%;
+    --card-foreground: 150 10% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 20 20% 10%;
+    --popover-foreground: 150 10% 12%;
 
-    /* Warm amber accent */
-    --primary: 25 95% 53%;
+    /* Moss green primary */
+    --primary: 140 30% 35%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 40 20% 94%;
-    --secondary-foreground: 20 20% 20%;
+    /* Soft pink accent */
+    --accent: 340 45% 70%;
+    --accent-foreground: 340 45% 20%;
 
-    --muted: 40 15% 95%;
-    --muted-foreground: 20 10% 45%;
+    --secondary: 140 15% 92%;
+    --secondary-foreground: 140 20% 25%;
 
-    --accent: 25 95% 53%;
-    --accent-foreground: 0 0% 100%;
+    --muted: 140 10% 94%;
+    --muted-foreground: 140 8% 45%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     /* Subtle borders */
-    --border: 40 15% 90%;
-    --input: 40 15% 90%;
-    --ring: 25 95% 53%;
+    --border: 140 10% 88%;
+    --input: 140 10% 88%;
+    --ring: 140 30% 35%;
 
     --radius: 0.75rem;
 
     /* Topic colors */
-    --topic-react: 200 100% 50%;
-    --topic-javascript: 45 100% 50%;
-    --topic-css: 320 70% 55%;
-    --topic-html: 15 100% 55%;
+    --topic-react: 200 100% 45%;
+    --topic-javascript: 45 95% 45%;
+    --topic-css: 340 55% 55%;
+    --topic-html: 15 85% 50%;
 
     /* Success/Info states */
-    --success: 142 70% 45%;
+    --success: 142 55% 40%;
     --success-foreground: 0 0% 100%;
-    --info: 200 95% 50%;
+    --info: 200 85% 45%;
     --info-foreground: 0 0% 100%;
 
-    /* Sidebar - slightly darker neutral */
-    --sidebar-background: 40 10% 96%;
-    --sidebar-foreground: 20 15% 25%;
-    --sidebar-primary: 25 95% 53%;
+    /* Sidebar - slightly tinted neutral */
+    --sidebar-background: 140 8% 95%;
+    --sidebar-foreground: 140 15% 25%;
+    --sidebar-primary: 140 30% 35%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 40 15% 92%;
-    --sidebar-accent-foreground: 20 20% 15%;
-    --sidebar-border: 40 10% 88%;
-    --sidebar-ring: 25 95% 53%;
+    --sidebar-accent: 340 35% 92%;
+    --sidebar-accent-foreground: 140 20% 15%;
+    --sidebar-border: 140 10% 88%;
+    --sidebar-ring: 140 30% 35%;
   }
 
   .dark {
-    --background: 20 15% 8%;
-    --foreground: 40 15% 95%;
+    --background: 150 15% 7%;
+    --foreground: 140 10% 92%;
 
-    --card: 20 15% 12%;
-    --card-foreground: 40 15% 95%;
+    --card: 150 12% 11%;
+    --card-foreground: 140 10% 92%;
 
-    --popover: 20 15% 12%;
-    --popover-foreground: 40 15% 95%;
+    --popover: 150 12% 11%;
+    --popover-foreground: 140 10% 92%;
 
-    --primary: 25 95% 55%;
-    --primary-foreground: 20 20% 5%;
+    /* Moss green primary - slightly brighter for dark mode */
+    --primary: 140 35% 45%;
+    --primary-foreground: 150 15% 7%;
 
-    --secondary: 20 15% 18%;
-    --secondary-foreground: 40 15% 90%;
+    /* Soft pink accent */
+    --accent: 340 45% 65%;
+    --accent-foreground: 340 45% 95%;
 
-    --muted: 20 15% 15%;
-    --muted-foreground: 40 10% 55%;
+    --secondary: 150 12% 16%;
+    --secondary-foreground: 140 10% 88%;
 
-    --accent: 25 95% 55%;
-    --accent-foreground: 20 20% 5%;
+    --muted: 150 12% 14%;
+    --muted-foreground: 140 8% 55%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 20 15% 18%;
-    --input: 20 15% 18%;
-    --ring: 25 95% 55%;
+    --border: 150 12% 18%;
+    --input: 150 12% 18%;
+    --ring: 140 35% 45%;
 
-    --sidebar-background: 20 15% 10%;
-    --sidebar-foreground: 40 10% 80%;
-    --sidebar-primary: 25 95% 55%;
-    --sidebar-primary-foreground: 20 20% 5%;
-    --sidebar-accent: 20 15% 15%;
-    --sidebar-accent-foreground: 40 15% 90%;
-    --sidebar-border: 20 15% 15%;
-    --sidebar-ring: 25 95% 55%;
+    --sidebar-background: 150 12% 9%;
+    --sidebar-foreground: 140 8% 80%;
+    --sidebar-primary: 140 35% 45%;
+    --sidebar-primary-foreground: 150 15% 7%;
+    --sidebar-accent: 340 30% 18%;
+    --sidebar-accent-foreground: 140 10% 90%;
+    --sidebar-border: 150 12% 15%;
+    --sidebar-ring: 140 35% 45%;
   }
 }
 
@@ -127,24 +130,28 @@
     @apply bg-white/80 backdrop-blur-xl border border-white/20;
   }
 
+  .dark .glass {
+    @apply bg-black/40 backdrop-blur-xl border border-white/10;
+  }
+
   .card-hover {
     @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5;
   }
 
   .topic-react {
-    @apply bg-[hsl(200,100%,50%)] text-white;
+    @apply bg-topic-react text-white;
   }
 
   .topic-javascript {
-    @apply bg-[hsl(45,100%,50%)] text-black;
+    @apply bg-topic-javascript text-black;
   }
 
   .topic-css {
-    @apply bg-[hsl(320,70%,55%)] text-white;
+    @apply bg-topic-css text-white;
   }
 
   .topic-html {
-    @apply bg-[hsl(15,100%,55%)] text-white;
+    @apply bg-topic-html text-white;
   }
 
   .mastery-low {
@@ -152,10 +159,14 @@
   }
 
   .mastery-medium {
-    @apply text-[hsl(45,100%,40%)];
+    @apply text-amber-600 dark:text-amber-400;
   }
 
   .mastery-high {
-    @apply text-[hsl(142,70%,45%)];
+    @apply text-success;
+  }
+
+  .accent-glow {
+    @apply text-accent;
   }
 }

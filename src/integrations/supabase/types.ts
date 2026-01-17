@@ -144,8 +144,12 @@ export type Database = {
           back: string
           category_id: string
           created_at: string
+          ease_factor: number | null
           front: string
           id: string
+          interval_days: number | null
+          next_review_at: string | null
+          repetitions: number | null
           tags: Json | null
           topic_id: string
         }
@@ -153,8 +157,12 @@ export type Database = {
           back: string
           category_id: string
           created_at?: string
+          ease_factor?: number | null
           front: string
           id: string
+          interval_days?: number | null
+          next_review_at?: string | null
+          repetitions?: number | null
           tags?: Json | null
           topic_id: string
         }
@@ -162,8 +170,12 @@ export type Database = {
           back?: string
           category_id?: string
           created_at?: string
+          ease_factor?: number | null
           front?: string
           id?: string
+          interval_days?: number | null
+          next_review_at?: string | null
+          repetitions?: number | null
           tags?: Json | null
           topic_id?: string
         }
@@ -294,6 +306,50 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      user_flashcard_progress: {
+        Row: {
+          created_at: string
+          ease_factor: number
+          flashcard_id: string
+          id: string
+          interval_days: number
+          last_reviewed_at: string | null
+          next_review_at: string
+          repetitions: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ease_factor?: number
+          flashcard_id: string
+          id?: string
+          interval_days?: number
+          last_reviewed_at?: string | null
+          next_review_at?: string
+          repetitions?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ease_factor?: number
+          flashcard_id?: string
+          id?: string
+          interval_days?: number
+          last_reviewed_at?: string | null
+          next_review_at?: string
+          repetitions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_flashcard_progress_flashcard_id_fkey"
+            columns: ["flashcard_id"]
+            isOneToOne: false
+            referencedRelation: "flashcards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
