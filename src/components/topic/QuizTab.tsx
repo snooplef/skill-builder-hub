@@ -5,9 +5,11 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Category, CategoryMastery, Question, TopicId, QuizMode, QuizFormat } from '@/types';
-import { Play, Shuffle, Target } from 'lucide-react';
+import { Play, Shuffle, Target, RotateCcw } from 'lucide-react';
 import { QuizSession } from './QuizSession';
+import { useWrongAnswers } from '@/hooks/useWrongAnswers';
 
 interface QuizTabProps {
   topicId: TopicId;
@@ -22,6 +24,8 @@ export function QuizTab({ topicId, categories, questions, mastery }: QuizTabProp
   const [quizLength, setQuizLength] = useState('10');
   const [format, setFormat] = useState<QuizFormat>('adaptive');
   const [activeQuiz, setActiveQuiz] = useState<Question[] | null>(null);
+  
+  const { data: wrongAnswers = [], isLoading: isLoadingWrongAnswers, refetch: refetchWrongAnswers } = useWrongAnswers(topicId, questions);
 
   const handleCategoryToggle = (categoryId: string, checked: boolean) => {
     if (checked) {
@@ -81,6 +85,16 @@ export function QuizTab({ topicId, categories, questions, mastery }: QuizTabProp
 
   const handleQuizComplete = () => {
     setActiveQuiz(null);
+    // Refetch wrong answers after quiz completion
+    refetchWrongAnswers();
+  };
+
+  const startReviewWrongAnswers = () => {
+    if (wrongAnswers.length === 0) return;
+    
+    // Shuffle the wrong answers
+    const shuffled = [...wrongAnswers].sort(() => Math.random() - 0.5);
+    setActiveQuiz(shuffled);
   };
 
   if (activeQuiz) {
@@ -96,17 +110,48 @@ export function QuizTab({ topicId, categories, questions, mastery }: QuizTabProp
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-primary" />
-          Quiz Setup
-        </CardTitle>
-        <CardDescription>
-          Configure your quiz settings and start practicing
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div className="space-y-6">
+      {/* Review Wrong Answers Card */}
+      {wrongAnswers.length > 0 && (
+        <Card className="border-accent/30 bg-accent/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="w-5 h-5 text-accent" />
+                <CardTitle className="text-base">Review Wrong Answers</CardTitle>
+              </div>
+              <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">
+                {wrongAnswers.length} {wrongAnswers.length === 1 ? 'question' : 'questions'}
+              </Badge>
+            </div>
+            <CardDescription>
+              Practice questions you got wrong in previous quizzes
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <Button 
+              onClick={startReviewWrongAnswers}
+              variant="outline"
+              className="border-accent text-accent hover:bg-accent/10"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Start Review ({wrongAnswers.length})
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="w-5 h-5 text-primary" />
+            Quiz Setup
+          </CardTitle>
+          <CardDescription>
+            Configure your quiz settings and start practicing
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
         {/* Mode Selection */}
         <div className="space-y-3">
           <Label className="text-sm font-medium">Quiz Mode</Label>
@@ -203,24 +248,25 @@ export function QuizTab({ topicId, categories, questions, mastery }: QuizTabProp
           </RadioGroup>
         </div>
 
-        {/* Start Button */}
-        <div className="pt-4">
-          <Button 
-            onClick={generateQuiz} 
-            size="lg"
-            disabled={questions.length === 0}
-            className="w-full sm:w-auto"
-          >
-            <Play className="w-4 h-4 mr-2" />
-            Start Quiz
-          </Button>
-          {questions.length === 0 && (
-            <p className="text-sm text-muted-foreground mt-2">
-              No questions available. Import some content first.
-            </p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          {/* Start Button */}
+          <div className="pt-4">
+            <Button 
+              onClick={generateQuiz} 
+              size="lg"
+              disabled={questions.length === 0}
+              className="w-full sm:w-auto"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              Start Quiz
+            </Button>
+            {questions.length === 0 && (
+              <p className="text-sm text-muted-foreground mt-2">
+                No questions available. Import some content first.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
