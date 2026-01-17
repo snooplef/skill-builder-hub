@@ -2,26 +2,36 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Question, TopicId, Attempt } from '@/types';
-import { Trophy, RotateCcw, X, CheckCircle, XCircle, HelpCircle } from 'lucide-react';
+import { Trophy, RotateCcw, X, CheckCircle, XCircle, HelpCircle, Timer, Flame, Zap } from 'lucide-react';
 
 interface QuestionResult {
   question: Question;
   result: Attempt['result'];
+  timeSpent: number;
 }
 
 interface QuizSummaryProps {
   results: QuestionResult[];
   topicId: TopicId;
+  totalTime: number;
+  bestStreak: number;
   onRetry: () => void;
   onClose: () => void;
 }
 
-export function QuizSummary({ results, topicId, onRetry, onClose }: QuizSummaryProps) {
+export function QuizSummary({ results, topicId, totalTime, bestStreak, onRetry, onClose }: QuizSummaryProps) {
   const correctCount = results.filter(r => 
     r.result === 'correct' || r.result === 'self_correct'
   ).length;
   
   const accuracy = Math.round((correctCount / results.length) * 100);
+  const avgTimePerQuestion = Math.round(totalTime / results.length);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+  };
 
   // Group by category
   const categoryBreakdown = results.reduce((acc, r) => {
@@ -50,33 +60,55 @@ export function QuizSummary({ results, topicId, onRetry, onClose }: QuizSummaryP
   };
 
   const getScoreMessage = () => {
-    if (accuracy >= 90) return "Outstanding! You're crushing it!";
-    if (accuracy >= 70) return "Great job! Keep practicing!";
-    if (accuracy >= 50) return "Good effort! Room for improvement.";
-    return "Keep studying, you'll get there!";
+    if (accuracy >= 90) return { text: "Outstanding! You're crushing it!", emoji: "🎉" };
+    if (accuracy >= 70) return { text: "Great job! Keep practicing!", emoji: "💪" };
+    if (accuracy >= 50) return { text: "Good effort! Room for improvement.", emoji: "📚" };
+    return { text: "Keep studying, you'll get there!", emoji: "🌱" };
   };
+
+  const message = getScoreMessage();
 
   return (
     <div className="space-y-6 max-w-2xl animate-fade-in">
       {/* Summary Card */}
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-2 bg-gradient-to-r from-primary to-primary/60" />
         <CardHeader className="text-center pb-2">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Trophy className="w-8 h-8 text-primary" />
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Trophy className="w-10 h-10 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Quiz Complete!</CardTitle>
-          <p className="text-muted-foreground">{getScoreMessage()}</p>
+          <CardTitle className="text-2xl">Quiz Complete! {message.emoji}</CardTitle>
+          <p className="text-muted-foreground">{message.text}</p>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Score Display */}
           <div className="text-center">
-            <div className="text-5xl font-bold text-primary mb-2">{accuracy}%</div>
+            <div className="text-6xl font-bold text-primary mb-2">{accuracy}%</div>
             <p className="text-muted-foreground">
               {correctCount} of {results.length} correct
             </p>
           </div>
 
           <Progress value={accuracy} className="h-3" />
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-4 rounded-lg bg-muted/50">
+              <Timer className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
+              <div className="text-lg font-semibold">{formatTime(totalTime)}</div>
+              <div className="text-xs text-muted-foreground">Total Time</div>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-muted/50">
+              <Zap className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
+              <div className="text-lg font-semibold">{formatTime(avgTimePerQuestion)}</div>
+              <div className="text-xs text-muted-foreground">Avg per Q</div>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-primary/10">
+              <Flame className="w-5 h-5 mx-auto mb-2 text-primary" />
+              <div className="text-lg font-semibold">{bestStreak}</div>
+              <div className="text-xs text-muted-foreground">Best Streak</div>
+            </div>
+          </div>
 
           {/* Category Breakdown */}
           {Object.keys(categoryBreakdown).length > 1 && (
@@ -120,13 +152,16 @@ export function QuizSummary({ results, topicId, onRetry, onClose }: QuizSummaryP
             {results.map((r, index) => (
               <div 
                 key={index}
-                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
+                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
               >
                 <span className="text-sm font-medium text-muted-foreground w-6 shrink-0">
                   {index + 1}.
                 </span>
                 <p className="text-sm flex-1 line-clamp-2">{r.question.prompt}</p>
-                {getResultIcon(r.result)}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-muted-foreground">{r.timeSpent}s</span>
+                  {getResultIcon(r.result)}
+                </div>
               </div>
             ))}
           </div>

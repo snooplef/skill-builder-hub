@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Question, TopicId, CategoryMastery, QuizFormat, Attempt } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { CheckCircle, XCircle, ArrowRight, HelpCircle } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowRight, HelpCircle, Timer, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QuizSummary } from './QuizSummary';
 
@@ -21,6 +21,7 @@ interface QuizSessionProps {
 interface QuestionResult {
   question: Question;
   result: Attempt['result'];
+  timeSpent: number;
 }
 
 export function QuizSession({ questions, topicId, mastery, format, onComplete }: QuizSessionProps) {
@@ -30,9 +31,37 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
   const [openAnswer, setOpenAnswer] = useState('');
   const [showAnswer, setShowAnswer] = useState(false);
   const [results, setResults] = useState<QuestionResult[]>([]);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const questionStartTime = useRef(Date.now());
 
   const currentQuestion = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
+
+  // Timer effect
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setTimeElapsed((prev) => prev + 1);
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  // Reset timer for each question
+  useEffect(() => {
+    questionStartTime.current = Date.now();
+  }, [currentIndex]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Determine if this MCQ or open-ended based on adaptive logic
   const shouldBeOpenEnded = () => {
@@ -45,11 +74,11 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
     const attemptsCount = categoryMastery?.attempts_count || 0;
 
     if (masteryScore > 80 && attemptsCount >= 10) {
-      return Math.random() > 0.2; // 80% open-ended
+      return Math.random() > 0.2;
     } else if (masteryScore > 60) {
-      return Math.random() > 0.5; // 50% open-ended
+      return Math.random() > 0.5;
     } else {
-      return Math.random() > 0.9; // 10% open-ended
+      return Math.random() > 0.9;
     }
   };
 
@@ -58,14 +87,29 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
   const logAttempt = async (result: Attempt['result']) => {
     if (!user) return;
 
+    const timeSpent = Math.round((Date.now() - questionStartTime.current) / 1000);
+
     await supabase.from('attempts').insert({
       user_id: user.id,
       item_type: 'question',
       question_id: currentQuestion.id,
       result,
+      time_spent_seconds: timeSpent,
     });
 
-    setResults([...results, { question: currentQuestion, result }]);
+    // Update streak
+    const isCorrect = result === 'correct' || result === 'self_correct';
+    if (isCorrect) {
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+      if (newStreak > bestStreak) {
+        setBestStreak(newStreak);
+      }
+    } else {
+      setStreak(0);
+    }
+
+    setResults([...results, { question: currentQuestion, result, timeSpent }]);
   };
 
   const handleMCQSubmit = async () => {
@@ -92,12 +136,14 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
 
   const goToNext = () => {
     if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setSelectedChoice(null);
-      setOpenAnswer('');
-      setShowAnswer(false);
-    } else {
-      // Quiz complete - results already logged
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentIndex(currentIndex + 1);
+        setSelectedChoice(null);
+        setOpenAnswer('');
+        setShowAnswer(false);
+        setIsTransitioning(false);
+      }, 200);
     }
   };
 
@@ -107,6 +153,8 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
       <QuizSummary 
         results={results}
         topicId={topicId}
+        totalTime={timeElapsed}
+        bestStreak={bestStreak}
         onRetry={onComplete}
         onClose={onComplete}
       />
@@ -114,20 +162,36 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      {/* Progress Header */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">
+    <div className={cn(
+      "space-y-6 max-w-2xl transition-all duration-200",
+      isTransitioning ? "opacity-0 translate-x-4" : "opacity-100 translate-x-0"
+    )}>
+      {/* Progress Header with Timer and Streak */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground text-sm">
             Question {currentIndex + 1} of {questions.length}
           </span>
-          <span className="font-medium">{Math.round(progress)}%</span>
+          <div className="flex items-center gap-4">
+            {/* Streak */}
+            {streak > 0 && (
+              <div className="flex items-center gap-1.5 text-primary animate-fade-in">
+                <Flame className="w-4 h-4" />
+                <span className="text-sm font-semibold">{streak} streak</span>
+              </div>
+            )}
+            {/* Timer */}
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Timer className="w-4 h-4" />
+              <span className="text-sm font-mono">{formatTime(timeElapsed)}</span>
+            </div>
+          </div>
         </div>
         <Progress value={progress} className="h-2" />
       </div>
 
       {/* Question Card */}
-      <Card>
+      <Card className="animate-fade-in">
         <CardHeader>
           <CardTitle className="text-lg font-medium leading-relaxed">
             {currentQuestion.prompt}
@@ -137,14 +201,14 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
           {/* MCQ Choices */}
           {!isOpenEnded && currentQuestion.choices && (
             <div className="space-y-2">
-              {currentQuestion.choices.map((choice, index) => {
+              {(currentQuestion.choices as string[]).map((choice, index) => {
                 const isSelected = selectedChoice === index;
                 const isCorrect = index === currentQuestion.correct_choice_index;
                 
                 let choiceClass = 'border-border hover:border-primary/50 hover:bg-muted/50';
                 if (showAnswer) {
                   if (isCorrect) {
-                    choiceClass = 'border-[hsl(142,70%,45%)] bg-[hsl(142,70%,95%)]';
+                    choiceClass = 'border-[hsl(142,70%,45%)] bg-[hsl(142,70%,95%)] scale-[1.02]';
                   } else if (isSelected && !isCorrect) {
                     choiceClass = 'border-destructive bg-destructive/10';
                   }
@@ -158,7 +222,7 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
                     onClick={() => !showAnswer && setSelectedChoice(index)}
                     disabled={showAnswer}
                     className={cn(
-                      'w-full p-4 rounded-lg border text-left transition-all flex items-center gap-3',
+                      'w-full p-4 rounded-lg border text-left transition-all duration-200 flex items-center gap-3',
                       choiceClass
                     )}
                   >
@@ -167,10 +231,10 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
                     </span>
                     <span className="flex-1">{choice}</span>
                     {showAnswer && isCorrect && (
-                      <CheckCircle className="w-5 h-5 text-[hsl(142,70%,45%)]" />
+                      <CheckCircle className="w-5 h-5 text-[hsl(142,70%,45%)] animate-scale-in" />
                     )}
                     {showAnswer && isSelected && !isCorrect && (
-                      <XCircle className="w-5 h-5 text-destructive" />
+                      <XCircle className="w-5 h-5 text-destructive animate-scale-in" />
                     )}
                   </button>
                 );
@@ -185,13 +249,13 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
               value={openAnswer}
               onChange={(e) => setOpenAnswer(e.target.value)}
               rows={5}
-              className="resize-none"
+              className="resize-none transition-all focus:ring-2 focus:ring-primary/20"
             />
           )}
 
           {/* Explanation */}
           {showAnswer && (
-            <div className="p-4 rounded-lg bg-muted/50 border space-y-3">
+            <div className="p-4 rounded-lg bg-muted/50 border space-y-3 animate-fade-in">
               {currentQuestion.answer && (
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">Reference Answer</p>
@@ -231,7 +295,7 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
             )}
 
             {showAnswer && !isOpenEnded && (
-              <Button onClick={goToNext}>
+              <Button onClick={goToNext} className="animate-fade-in">
                 {currentIndex < questions.length - 1 ? (
                   <>
                     Next Question
@@ -244,7 +308,7 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
             )}
 
             {showAnswer && isOpenEnded && (
-              <>
+              <div className="flex gap-3 animate-fade-in">
                 <Button 
                   variant="outline"
                   onClick={() => handleSelfGrade(true)}
@@ -261,7 +325,7 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
                   <XCircle className="w-4 h-4 mr-2" />
                   I Got It Wrong
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </CardContent>
