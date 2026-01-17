@@ -57,6 +57,12 @@
     --info: 200 85% 45%;
     --info-foreground: 0 0% 100%;
 
+    /* Correct/Wrong answer states */
+    --correct: 142 55% 45%;
+    --correct-bg: 142 55% 95%;
+    --wrong: 0 84% 60%;
+    --wrong-bg: 0 84% 95%;
+
     /* Sidebar - slightly tinted neutral */
     --sidebar-background: 140 8% 95%;
     --sidebar-foreground: 140 15% 25%;
@@ -107,6 +113,12 @@
     --sidebar-accent-foreground: 140 10% 90%;
     --sidebar-border: 150 12% 15%;
     --sidebar-ring: 140 35% 45%;
+
+    /* Correct/Wrong answer states - dark mode */
+    --correct: 142 55% 50%;
+    --correct-bg: 142 40% 15%;
+    --wrong: 0 70% 55%;
+    --wrong-bg: 0 50% 15%;
   }
 }
 
