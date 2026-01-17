@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { Category, CategoryMastery } from '@/types';
 import { BarChart3, Target, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -18,15 +19,15 @@ export function ProgressTab({ categories, mastery }: ProgressTabProps) {
   });
 
   const getMasteryColorClass = (score: number) => {
-    if (score < 40) return 'text-destructive';
-    if (score < 70) return 'text-[hsl(45,100%,40%)]';
-    return 'text-[hsl(142,70%,45%)]';
+    if (score < 40) return 'mastery-low';
+    if (score < 70) return 'mastery-medium';
+    return 'mastery-high';
   };
 
   const getProgressColorClass = (score: number) => {
     if (score < 40) return '[&>div]:bg-destructive';
-    if (score < 70) return '[&>div]:bg-[hsl(45,100%,50%)]';
-    return '[&>div]:bg-[hsl(142,70%,45%)]';
+    if (score < 70) return '[&>div]:bg-amber-500';
+    return '[&>div]:bg-success';
   };
 
   // Calculate overall stats
@@ -109,9 +110,9 @@ export function ProgressTab({ categories, mastery }: ProgressTabProps) {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{category.name}</span>
                       {isOpenEndedReady && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-[hsl(142,70%,95%)] text-[hsl(142,70%,35%)] border border-[hsl(142,70%,80%)]">
+                        <Badge variant="secondary" className="bg-success/10 text-success border-success/20 text-xs">
                           Open-ended ready
-                        </span>
+                        </Badge>
                       )}
                     </div>
                     <span className={`font-semibold ${getMasteryColorClass(score)}`}>

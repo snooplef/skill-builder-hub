@@ -4,13 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
 import { toast } from 'sonner';
-import { User, RotateCcw, AlertTriangle, Save, Loader2 } from 'lucide-react';
+import { User, RotateCcw, AlertTriangle, Save, Loader2, Moon, Sun, Monitor } from 'lucide-react';
 
 export default function Settings() {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [displayName, setDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -71,6 +74,12 @@ export default function Settings() {
       // Delete all user's mastery data
       await supabase
         .from('category_mastery')
+        .delete()
+        .eq('user_id', user.id);
+
+      // Delete all user's flashcard progress
+      await supabase
+        .from('user_flashcard_progress')
         .delete()
         .eq('user_id', user.id);
 
@@ -138,6 +147,52 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Appearance Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sun className="w-5 h-5" />
+            Appearance
+          </CardTitle>
+          <CardDescription>
+            Customize how the app looks
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="theme">Theme</Label>
+            <Select value={theme} onValueChange={(value: 'light' | 'dark' | 'system') => setTheme(value)}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Select theme" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">
+                  <div className="flex items-center gap-2">
+                    <Sun className="w-4 h-4" />
+                    Light
+                  </div>
+                </SelectItem>
+                <SelectItem value="dark">
+                  <div className="flex items-center gap-2">
+                    <Moon className="w-4 h-4" />
+                    Dark
+                  </div>
+                </SelectItem>
+                <SelectItem value="system">
+                  <div className="flex items-center gap-2">
+                    <Monitor className="w-4 h-4" />
+                    System
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Choose your preferred color scheme
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Reset Progress Card */}
       <Card className="border-destructive/30">
         <CardHeader>
@@ -154,7 +209,7 @@ export default function Settings() {
             <div>
               <p className="font-medium">Reset All Progress</p>
               <p className="text-sm text-muted-foreground">
-                Delete all your quiz attempts and mastery scores
+                Delete all your quiz attempts, flashcard progress, and mastery scores
               </p>
             </div>
             <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
@@ -173,6 +228,7 @@ export default function Settings() {
                       <li>Quiz attempt history</li>
                       <li>Flashcard review history</li>
                       <li>Category mastery scores</li>
+                      <li>Spaced repetition progress</li>
                       <li>Streak and progress data</li>
                     </ul>
                   </DialogDescription>

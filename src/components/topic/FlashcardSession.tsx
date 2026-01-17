@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { Flashcard, TopicId } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { RotateCcw, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+import { updateFlashcardProgress } from '@/hooks/useSpacedRepetition';
+import { RotateCcw, CheckCircle, XCircle, Zap, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FlashcardSessionProps {
@@ -18,18 +20,25 @@ export function FlashcardSession({ flashcards, topicId, onComplete }: FlashcardS
   const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [results, setResults] = useState<('knew' | 'didnt_know')[]>([]);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
 
   const currentCard = flashcards[currentIndex];
   const progress = ((currentIndex + 1) / flashcards.length) * 100;
   const isComplete = currentIndex >= flashcards.length;
 
   const handleFlip = () => {
-    setIsFlipped(!isFlipped);
+    if (!isTransitioning) {
+      setIsFlipped(!isFlipped);
+    }
   };
 
   const handleResponse = async (knew: boolean) => {
-    if (!user) return;
+    if (!user || isTransitioning) return;
+
+    setIsTransitioning(true);
 
     // Log attempt
     await supabase.from('attempts').insert({
@@ -39,15 +48,35 @@ export function FlashcardSession({ flashcards, topicId, onComplete }: FlashcardS
       result: knew ? 'self_correct' : 'self_wrong',
     });
 
+    // Update spaced repetition progress
+    // SM-2 quality: 4 = knew it easily, 1 = didn't know
+    const quality = knew ? 4 : 1;
+    await updateFlashcardProgress(user.id, currentCard.id, quality);
+
+    // Update streak
+    if (knew) {
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+      if (newStreak > bestStreak) {
+        setBestStreak(newStreak);
+      }
+    } else {
+      setStreak(0);
+    }
+
     setResults([...results, knew ? 'knew' : 'didnt_know']);
     
-    if (currentIndex < flashcards.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setIsFlipped(false);
-    } else {
-      // Session complete
-      setCurrentIndex(currentIndex + 1);
-    }
+    // Animate transition
+    setTimeout(() => {
+      if (currentIndex < flashcards.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+        setIsFlipped(false);
+      } else {
+        // Session complete
+        setCurrentIndex(currentIndex + 1);
+      }
+      setIsTransitioning(false);
+    }, 300);
   };
 
   // Summary screen
@@ -76,6 +105,19 @@ export function FlashcardSession({ flashcards, topicId, onComplete }: FlashcardS
 
             <Progress value={accuracy} className="h-2" />
 
+            {/* Spaced repetition info */}
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Brain className="w-4 h-4 text-accent" />
+              <span>Your progress is saved for spaced repetition</span>
+            </div>
+
+            {bestStreak > 1 && (
+              <div className="flex items-center justify-center gap-2">
+                <Zap className="w-4 h-4 text-accent" />
+                <span className="text-sm font-medium">Best streak: {bestStreak} cards!</span>
+              </div>
+            )}
+
             <div className="flex gap-3 pt-4">
               <Button onClick={onComplete} className="flex-1">
                 <RotateCcw className="w-4 h-4 mr-2" />
@@ -93,27 +135,35 @@ export function FlashcardSession({ flashcards, topicId, onComplete }: FlashcardS
 
   return (
     <div className="space-y-6 max-w-lg mx-auto">
-      {/* Progress */}
+      {/* Progress & Streak */}
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">
             Card {currentIndex + 1} of {flashcards.length}
           </span>
-          <span className="font-medium">{Math.round(progress)}%</span>
+          <div className="flex items-center gap-3">
+            {streak > 0 && (
+              <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">
+                <Zap className="w-3 h-3 mr-1" />
+                {streak} streak
+              </Badge>
+            )}
+            <span className="font-medium">{Math.round(progress)}%</span>
+          </div>
         </div>
         <Progress value={progress} className="h-2" />
       </div>
 
       {/* Flashcard */}
       <div 
-        className="relative h-80 cursor-pointer perspective-1000"
+        className={cn(
+          "relative h-80 cursor-pointer perspective-1000 transition-all duration-300",
+          isTransitioning && "opacity-50 scale-95"
+        )}
         onClick={handleFlip}
       >
         <div 
-          className={cn(
-            "absolute inset-0 transition-transform duration-500 transform-style-preserve-3d",
-            isFlipped && "rotate-y-180"
-          )}
+          className="absolute inset-0 transition-transform duration-500"
           style={{ 
             transformStyle: 'preserve-3d',
             transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
@@ -158,7 +208,7 @@ export function FlashcardSession({ flashcards, topicId, onComplete }: FlashcardS
       </div>
 
       {/* Response Buttons */}
-      {isFlipped && (
+      {isFlipped && !isTransitioning && (
         <div className="flex gap-3 animate-fade-in">
           <Button 
             variant="outline"
@@ -170,7 +220,7 @@ export function FlashcardSession({ flashcards, topicId, onComplete }: FlashcardS
           </Button>
           <Button 
             onClick={() => handleResponse(true)}
-            className="flex-1 bg-[hsl(142,70%,45%)] hover:bg-[hsl(142,70%,40%)]"
+            className="flex-1 bg-success hover:bg-success/90"
           >
             <CheckCircle className="w-4 h-4 mr-2" />
             Knew It

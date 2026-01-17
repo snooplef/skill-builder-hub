@@ -75,6 +75,10 @@ export default {
           css: "hsl(var(--topic-css))",
           html: "hsl(var(--topic-html))",
         },
+        amber: {
+          400: "hsl(45 93% 58%)",
+          600: "hsl(45 93% 40%)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

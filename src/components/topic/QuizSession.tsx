@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { Question, TopicId, CategoryMastery, QuizFormat, Attempt } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -175,10 +176,10 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
           <div className="flex items-center gap-4">
             {/* Streak */}
             {streak > 0 && (
-              <div className="flex items-center gap-1.5 text-primary animate-fade-in">
-                <Flame className="w-4 h-4" />
-                <span className="text-sm font-semibold">{streak} streak</span>
-              </div>
+              <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20 animate-fade-in">
+                <Flame className="w-3 h-3 mr-1" />
+                {streak} streak
+              </Badge>
             )}
             {/* Timer */}
             <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -208,7 +209,7 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
                 let choiceClass = 'border-border hover:border-primary/50 hover:bg-muted/50';
                 if (showAnswer) {
                   if (isCorrect) {
-                    choiceClass = 'border-[hsl(142,70%,45%)] bg-[hsl(142,70%,95%)] scale-[1.02]';
+                    choiceClass = 'border-success bg-success/10 scale-[1.02]';
                   } else if (isSelected && !isCorrect) {
                     choiceClass = 'border-destructive bg-destructive/10';
                   }
@@ -231,7 +232,7 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
                     </span>
                     <span className="flex-1">{choice}</span>
                     {showAnswer && isCorrect && (
-                      <CheckCircle className="w-5 h-5 text-[hsl(142,70%,45%)] animate-scale-in" />
+                      <CheckCircle className="w-5 h-5 text-success animate-scale-in" />
                     )}
                     {showAnswer && isSelected && !isCorrect && (
                       <XCircle className="w-5 h-5 text-destructive animate-scale-in" />
@@ -312,7 +313,7 @@ export function QuizSession({ questions, topicId, mastery, format, onComplete }:
                 <Button 
                   variant="outline"
                   onClick={() => handleSelfGrade(true)}
-                  className="border-[hsl(142,70%,45%)] text-[hsl(142,70%,35%)] hover:bg-[hsl(142,70%,95%)]"
+                  className="border-success text-success hover:bg-success/10"
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
                   I Got It Right
