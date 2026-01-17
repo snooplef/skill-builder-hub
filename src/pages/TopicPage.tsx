@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useEffect, useState, useCallback } from 'react';
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,80 +11,92 @@ import { ProgressTab } from '@/components/topic/ProgressTab';
 import { Atom, FileCode, Palette, Code } from 'lucide-react';
 
 const topicMeta: Record<TopicId, { name: string; icon: typeof Atom; color: string }> = {
-  react: { name: 'React', icon: Atom, color: 'bg-[hsl(200,100%,50%)]' },
-  javascript: { name: 'JavaScript', icon: FileCode, color: 'bg-[hsl(45,100%,50%)]' },
-  css: { name: 'CSS', icon: Palette, color: 'bg-[hsl(320,70%,55%)]' },
-  html: { name: 'HTML', icon: Code, color: 'bg-[hsl(15,100%,55%)]' },
+  react: { name: 'React', icon: Atom, color: 'bg-topic-react' },
+  javascript: { name: 'JavaScript', icon: FileCode, color: 'bg-topic-javascript' },
+  css: { name: 'CSS', icon: Palette, color: 'bg-topic-css' },
+  html: { name: 'HTML', icon: Code, color: 'bg-topic-html' },
 };
 
 export default function TopicPage() {
   const { topicId } = useParams<{ topicId: string }>();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const location = useLocation();
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [mastery, setMastery] = useState<CategoryMastery[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataKey, setDataKey] = useState(0);
 
   const defaultTab = searchParams.get('tab') || 'quiz';
   const validTopicId = (topicId && topicId in topicMeta) ? topicId as TopicId : 'react';
   const meta = topicMeta[validTopicId];
   const Icon = meta.icon;
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!user || !topicId) return;
+  const fetchData = useCallback(async () => {
+    if (!user || !topicId) return;
+    
+    setLoading(true);
+    
+    try {
+      // Fetch categories for this topic
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('topic_id', topicId);
+
+      // Fetch mastery for this topic
+      const { data: masteryData } = await supabase
+        .from('category_mastery')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('topic_id', topicId);
+
+      // Fetch questions for this topic
+      const { data: questionsData } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('topic_id', topicId);
+
+      // Fetch flashcards for this topic
+      const { data: flashcardsData } = await supabase
+        .from('flashcards')
+        .select('*')
+        .eq('topic_id', topicId);
+
+      if (categoriesData) setCategories(categoriesData as Category[]);
       
-      try {
-        // Fetch categories for this topic
-        const { data: categoriesData } = await supabase
-          .from('categories')
-          .select('*')
-          .eq('topic_id', topicId);
-
-        // Fetch mastery for this topic
-        const { data: masteryData } = await supabase
-          .from('category_mastery')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('topic_id', topicId);
-
-        // Fetch questions for this topic
-        const { data: questionsData } = await supabase
-          .from('questions')
-          .select('*')
-          .eq('topic_id', topicId);
-
-        // Fetch flashcards for this topic
-        const { data: flashcardsData } = await supabase
-          .from('flashcards')
-          .select('*')
-          .eq('topic_id', topicId);
-
-        if (categoriesData) setCategories(categoriesData as Category[]);
-        
-        if (masteryData && categoriesData) {
-          const enriched = masteryData.map((m) => ({
-            ...m,
-            category: categoriesData.find((c) => c.id === m.category_id),
-          })) as CategoryMastery[];
-          setMastery(enriched);
-        }
-
-        if (questionsData) setQuestions(questionsData as Question[]);
-        if (flashcardsData) setFlashcards(flashcardsData as Flashcard[]);
-
-      } catch (error) {
-        console.error('Error fetching topic data:', error);
-      } finally {
-        setLoading(false);
+      if (masteryData && categoriesData) {
+        const enriched = masteryData.map((m) => ({
+          ...m,
+          category: categoriesData.find((c) => c.id === m.category_id),
+        })) as CategoryMastery[];
+        setMastery(enriched);
+      } else {
+        setMastery([]);
       }
-    }
 
-    fetchData();
+      if (questionsData) setQuestions(questionsData as Question[]);
+      if (flashcardsData) setFlashcards(flashcardsData as Flashcard[]);
+
+    } catch (error) {
+      console.error('Error fetching topic data:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [user, topicId]);
+
+  // Refetch data when topicId changes - this ensures fresh data when navigating between topics
+  useEffect(() => {
+    setCategories([]);
+    setMastery([]);
+    setQuestions([]);
+    setFlashcards([]);
+    setDataKey(prev => prev + 1);
+    fetchData();
+  }, [topicId, fetchData]);
 
   if (loading) {
     return (
@@ -97,7 +109,7 @@ export default function TopicPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-5xl">
+    <div key={`${validTopicId}-${dataKey}`} className="space-y-6 animate-fade-in max-w-5xl">
       <div className="flex items-center gap-4">
         <div className={`w-12 h-12 rounded-xl ${meta.color} flex items-center justify-center`}>
           <Icon className="w-6 h-6 text-white" />
@@ -119,6 +131,7 @@ export default function TopicPage() {
 
         <TabsContent value="quiz" className="mt-6">
           <QuizTab 
+            key={`quiz-${validTopicId}-${dataKey}`}
             topicId={validTopicId}
             categories={categories}
             questions={questions}
@@ -128,6 +141,7 @@ export default function TopicPage() {
 
         <TabsContent value="flashcards" className="mt-6">
           <FlashcardsTab 
+            key={`flashcards-${validTopicId}-${dataKey}`}
             topicId={validTopicId}
             categories={categories}
             flashcards={flashcards}
@@ -136,6 +150,7 @@ export default function TopicPage() {
 
         <TabsContent value="progress" className="mt-6">
           <ProgressTab 
+            key={`progress-${validTopicId}-${dataKey}`}
             categories={categories}
             mastery={mastery}
           />
