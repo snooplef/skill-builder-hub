@@ -14,6 +14,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload, FileJson, FileUp, Eye, Copy, CheckCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 // Single category format
 const exampleQuestionsSingle = {
@@ -106,6 +107,7 @@ const exampleFlashcardsBatch = [
 ];
 
 export default function ContentLibrary() {
+  const { user } = useAuth();
   const [jsonInput, setJsonInput] = useState("");
   const [importing, setImporting] = useState(false);
   const [copied, setCopied] = useState<"questions" | "flashcards" | null>(null);
@@ -141,6 +143,7 @@ export default function ContentLibrary() {
   const importSingleCategory = async (
     data: any,
     type: "questions" | "flashcards",
+    userId: string,
   ): Promise<{ questions: number; flashcards: number }> => {
     const validTopics = ["react", "javascript", "css", "html"];
     if (!validTopics.includes(data.topic)) {
@@ -153,7 +156,7 @@ export default function ContentLibrary() {
     // Upsert category
     const { data: catData, error: catError } = await supabase
       .from("categories")
-      .upsert({ topic_id: data.topic, name: data.category }, { onConflict: "topic_id,name" })
+      .upsert({ topic_id: data.topic, name: data.category, created_by: userId }, { onConflict: "topic_id,name" })
       .select()
       .single();
 
@@ -176,6 +179,7 @@ export default function ContentLibrary() {
         explanation: q.explanation || null,
         difficulty: q.difficulty || null,
         tags: q.tags || null,
+        created_by: userId,
       }));
 
       const { error } = await supabase.from("questions").upsert(questions, { onConflict: "id" });
@@ -192,6 +196,7 @@ export default function ContentLibrary() {
           front: c.front,
           back: c.back,
           tags: c.tags || null,
+          created_by: userId,
         }));
 
         const { error } = await supabase.from("flashcards").upsert(cards, { onConflict: "id" });
@@ -204,6 +209,11 @@ export default function ContentLibrary() {
   };
 
   const validateAndImport = async (type: "questions" | "flashcards") => {
+    if (!user) {
+      toast.error("You must be logged in to import content");
+      return;
+    }
+
     try {
       setImporting(true);
       const data = JSON.parse(jsonInput);
@@ -217,7 +227,7 @@ export default function ContentLibrary() {
       let categoriesProcessed = 0;
 
       for (const categoryData of categories) {
-        const result = await importSingleCategory(categoryData, type);
+        const result = await importSingleCategory(categoryData, type, user.id);
         totalQuestions += result.questions;
         totalFlashcards += result.flashcards;
         categoriesProcessed++;
